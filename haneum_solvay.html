@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>솔베이 대논쟁: 양자역학의 아주 깊은 곳 (심연)</title>
+    <style>
+        :root {
+            --primary: #1a202c;
+            --accent: #d97706;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --positive: #2563eb;
+            --negative: #dc2626;
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+            --neutral: #94a3b8;
+            --cat-primary: #ff9dcc;
+            --cat-dark: #ff69b4;
+        }
+
+        body {
+            font-family: 'Pretendard', -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            line-height: 1.6;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body.search-open {
+            padding-left: 450px;
+        }
+
+        #game-container {
+            width: 95%;
+            max-width: 1000px;
+            background: var(--card-bg);
+            padding: 3rem;
+            border-radius: 32px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        .screen { display: none; }
+        .active { display: block; animation: fadeIn 0.6s ease; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 { font-size: 2.5rem; font-weight: 900; letter-spacing: -0.025em; margin-bottom: 0.5rem; word-break: normal; overflow-wrap: break-word;}
+        .intro-text { color: var(--text-sub); font-size: 1.125rem; margin-bottom: 3rem; word-break: normal; overflow-wrap: break-word; }
+
+        .character-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .char-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 24px;
+            padding: 2rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-align: left;
+        }
+        .char-card:hover { 
+            border-color: var(--accent);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);
+            transform: translateY(-4px);
+        }
+
+        .tag {
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+        .tag-copenhagen { background: #dbeafe; color: #1e40af; }
+        .tag-realism { background: #fee2e2; color: #991b1b; }
+
+        .game-layout {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 3rem;
+        }
+
+        #opponent-profile {
+            background: #f1f5f9;
+            padding: 2rem;
+            border-radius: 24px;
+            text-align: center;
+            height: fit-content;
+        }
+
+        #dialog-box {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            padding: 2.5rem;
+            border-radius: 24px;
+            margin-bottom: 2rem;
+            position: relative;
+            font-size: 1.25rem;
+        }
+        #dialog-box::before {
+            content: "“";
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            font-size: 4rem;
+            color: #e2e8f0;
+            font-family: serif;
+        }
+
+        .choice-btn {
+            display: block;
+            width: 100%;
+            padding: 1.25rem 2rem;
+            margin-bottom: 1rem;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            text-align: left;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: 0.2s;
+            box-sizing: border-box;
+            word-break: normal; 
+            overflow-wrap: break-word;
+        }
+        .choice-btn:hover { background: #f1f5f9; border-color: var(--primary); }
+
+        .feedback-box {
+            padding: 1.5rem;
+            border-radius: 16px;
+            margin-top: 1.5rem;
+            display: none;
+            font-weight: 500;
+            word-break: normal; 
+            overflow-wrap: break-word;
+        }
+        .correct { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+        .incorrect { background: #fff1f2; color: #9f1239; border: 1px solid #fecdd3; }
+
+        .progress-container {
+            width: 100%;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 3px;
+            margin-bottom: 3rem;
+        }
+        #progress-bar {
+            height: 100%;
+            background: var(--accent);
+            width: 0%;
+            transition: width 0.4s;
+        }
+
+        /* 📌 [교정] 팝업 버튼 때문에 줄이 벌어지거나 글이 밀리는 현상 해결 */
+        .cat-keyword-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #fff0f6;
+            border: 1px dashed var(--cat-dark);
+            border-radius: 6px;
+            /* 위아래 패딩을 0으로 만들어 줄 높이에 영향을 주지 않도록 설정 */
+            padding: 0px 6px; 
+            margin: 0 2px;
+            font-size: 0.95em; /* 주변 텍스트보다 살짝 작게 조절하여 줄 밀림 방지 */
+            font-family: inherit;
+            color: #c2185b;
+            font-weight: 600;
+            cursor: pointer;
+            
+            /* 핵심 교정: 글자 레이아웃 흐름을 깨지 않도록 기본 배치 설정 */
+            vertical-align: baseline; 
+            display: inline; /* 인라인으로 복원하여 텍스트 흐름 유지 */
+            white-space: nowrap; /* 단어가 도중에 끊겨서 다음 줄로 넘어가는 현상 방지 */
+        }
+        
+        /* 버튼 내부의 텍스트와 아이콘이 찌그러지지 않도록 보호 */
+        .cat-keyword-btn * {
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .cat-icon {
+            margin-left: 4px;
+            font-size: 0.85em;
+            transition: transform 0.2s;
+        }
+        
+        .cat-keyword-btn:hover .cat-icon {
+            transform: scale(1.2) rotate(-10deg);
+        }
+
+        /* 모달 팝업 구조 */
+        #cat-popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(2px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 3000;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        #cat-popup {
+            background: white;
+            padding: 2rem;
+            border-radius: 24px;
+            max-width: 450px;
+            width: 100%;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            position: relative;
+            border: 3px solid var(--cat-primary);
+            animation: popUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-sizing: border-box;
+        }
+        #cat-popup::before, #cat-popup::after {
+            content: "";
+            position: absolute;
+            top: -14px;
+            width: 30px;
+            height: 30px;
+            background: var(--cat-primary);
+            border-radius: 8px;
+            z-index: -1;
+        }
+        #cat-popup::before { left: 20px; transform: rotate(-15deg); }
+        #cat-popup::after { right: 20px; transform: rotate(15deg); }
+
+        @keyframes popUp {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        #cat-popup-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: var(--text-sub);
+        }
+
+        /* 캣봇 스타일 */
+        #chatbot-container {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 380px;
+            height: 550px;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 10px 35px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: visible;
+            z-index: 1000;
+            transform: translateY(120%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #chatbot-container.open { transform: translateY(0); }
+
+        #chatbot-container::before, #chatbot-container::after {
+            content: "";
+            position: absolute;
+            top: -15px;
+            width: 40px;
+            height: 40px;
+            background: var(--cat-primary);
+            border-radius: 10px;
+            z-index: -1;
+            transition: 0.3s;
+        }
+        #chatbot-container::before { left: 30px; transform: rotate(-15deg); }
+        #chatbot-container::after { right: 30px; transform: rotate(15deg); }
+
+        #chatbot-header {
+            background: var(--cat-primary);
+            color: white;
+            padding: 1.2rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top-left-radius: 24px;
+            border-top-right-radius: 24px;
+        }
+
+        #chatbot-messages {
+            flex: 1;
+            padding: 1.25rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            background: #fffafa;
+        }
+
+        .message {
+            padding: 0.75rem 1rem;
+            border-radius: 18px;
+            max-width: 85%;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            position: relative;
+            word-break: normal; 
+	   overflow-wrap: break-word;
+        }
+        .message.ai { background: white; align-self: flex-start; border: 2px solid var(--cat-primary); border-bottom-left-radius: 4px; }
+        .message.user { background: var(--cat-primary); color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+        .message.system { background: #fff1f2; color: #be123c; font-size: 0.8rem; align-self: center; text-align: center; width: 90%; }
+
+        #chatbot-input-area {
+            padding: 1rem;
+            border-top: 1px solid #ffe4e6;
+            background: white;
+            border-bottom-left-radius: 24px;
+            border-bottom-right-radius: 24px;
+        }
+        #chatbot-input-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+        #chatbot-input {
+            flex: 1;
+            border: 2px solid #ffe4e6;
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            outline: none;
+            transition: 0.2s;
+        }
+        #chatbot-input:focus { border-color: var(--cat-primary); }
+        #chatbot-btn {
+            background: var(--cat-primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 0 1.25rem;
+            cursor: pointer;
+            font-weight: 700;
+        }
+
+        #chatbot-toggle {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--cat-primary);
+            color: white;
+            width: 64px;
+            height: 64px;
+            border-radius: 32px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(255,157,204,0.4);
+            z-index: 999;
+            font-size: 2rem;
+            transition: 0.3s;
+        }
+        #chatbot-toggle:hover { transform: scale(1.1) rotate(10deg); background: var(--cat-dark); }
+
+        /* 검색 패널 스타일 */
+        #search-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 450px;
+            height: 100vh;
+            background: white;
+            box-shadow: 5px 0 25px rgba(0,0,0,0.1);
+            z-index: 2000;
+            transform: translateX(-100%);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+        }
+        #search-panel.open { transform: translateX(0); }
+        
+        #search-header {
+            background: var(--cat-primary);
+            color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #search-frame {
+            flex: 1;
+            border: none;
+        }
+
+        /* 📱 모바일 및 태블릿 반응형 레이아웃 최적화 */
+        @media (max-width: 768px) {
+            body.search-open { padding-left: 0; }
+            #search-panel { width: 100%; }
+            #game-container {
+                padding: 1.5rem;
+                border-radius: 20px;
+                margin: 10px;
+                width: calc(100% - 20px);
+            }
+            h1 { font-size: 1.8rem; }
+            .intro-text { font-size: 1rem; margin-bottom: 1.5rem; }
+            
+            .game-layout {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            #opponent-profile { padding: 1rem; }
+            #dialog-box { padding: 1.5rem; font-size: 1.1rem; margin-bottom: 1rem; }
+            .choice-btn { padding: 1rem; font-size: 1rem; }
+            #chatbot-container {
+                width: calc(100% - 2rem);
+                right: 1rem;
+                bottom: 5rem;
+                height: 450px;
+            }
+            #chatbot-toggle {
+                bottom: 1rem;
+                right: 1rem;
+                width: 56px;
+                height: 56px;
+                font-size: 1.6rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div id="search-panel">
+    <div id="search-header">
+        <span style="font-weight: 700;">🔍 양자냥 검색 도우미</span>
+        <span onclick="closeSearch()" style="cursor: pointer; font-size: 1.2rem;">✖</span>
+    </div>
+    <iframe id="search-frame" src="about:blank"></iframe>
+</div>
+
+<div id="cat-popup-overlay" onclick="closeCatPopup()">
+    <div id="cat-popup" onclick="event.stopPropagation()">
+        <span id="cat-popup-close" onclick="closeCatPopup()">✖</span>
+        <h3 id="cat-popup-title" style="color: var(--accent); margin-top: 0; border-bottom: 2px dashed var(--cat-primary); padding-bottom: 0.5rem; font-size: 1.2rem;">전문용어 돋보기</h3>
+        <p id="cat-popup-desc" style="font-size: 1.05rem; margin-bottom: 0; line-height: 1.6; word-break: normal; overflow-wrap: break-word;"></p>
+    </div>
+</div>
+
+<div id="game-container">
+    <div class="progress-container"><div id="progress-bar"></div></div>
+
+    <div id="screen-intro" class="screen active">
+        <h1 style="color: var(--accent)">SOLVAY 1927</h1>
+        <h1 class="parse-target">깊고 어려운 토론: 진짜 세상은 어떤 모습일까? (심연의 논쟁: 현실의 본질)</h1>
+        <p class="intro-text parse-target">단순한 지식 퀴즈를 넘어, 사람들의 생각을 완전히 바꾼 생각의 차이로 인한 다툼의 현장으로 초대합니다. (철학적 충돌)</p>
+        
+        <div style="margin: 2rem 0; background: #f1f5f9; padding: 2rem; border-radius: 20px;">
+            <p style="margin-bottom: 1rem; font-weight: 700;">과학 수사대원의 이름을 입력해주세요</p>
+            <input type="text" id="user-name" placeholder="이름을 입력하세요" 
+                   style="padding: 1rem; width: 100%; max-width: 250px; border-radius: 12px; border: 2px solid #e2e8f0; font-size: 1rem; text-align: center; outline: none; transition: 0.3s; box-sizing: border-box;">
+        </div>
+
+        <button onclick="checkNameAndNext()" style="background: var(--primary); color: white; padding: 1.25rem 3.5rem; border: none; border-radius: 16px; font-size: 1.125rem; font-weight: 700; cursor: pointer; width: 100%; max-width: 300px;">회의장 입장하기</button>
+    </div>
+
+    <div id="screen-select" class="screen">
+        <h2><span id="welcome-name" style="color: var(--accent)">대원</span>님, 자신이 믿는 생각을 선택하세요 <span class="parse-target">(철학적 신념)</span></h2>
+        <div class="character-grid">
+            <div class="char-card" onclick="startAdventure('bohr')">
+                <span class="tag tag-copenhagen parse-target">관찰이 중요하다는 생각 (코펜하겐 해석)</span>
+                <h3>닐스 보어</h3>
+                <p style="font-size: 0.95rem; color: var(--text-sub)">"우리가 관찰할 때만 그 모습이 결정됩니다. 우리는 자연 그 자체가 아니라, 자연에 대해 우리가 무엇을 말할 수 있는지를 공부합니다."</p>
+                <ul class="parse-target" style="font-size: 0.85rem; padding-left: 1.2rem; color: var(--positive)">
+                    <li>서로 반대되는 성질이 함께 있어야 한다는 원리(보완성 원리)</li>
+                    <li>재어본다는 것의 진짜 의미 (측정의 본질)</li>
+                </ul>
+            </div>
+            <div class="char-card" onclick="startAdventure('einstein')">
+                <span class="tag tag-realism parse-target">세상은 그대로 존재한다는 생각 (객관적 실재론)</span>
+                <h3>아인슈타인</h3>
+                <p style="font-size: 0.95rem; color: var(--text-sub)">"자연은 우리가 보든 안 보든 저 바깥에 그대로 있어야 합니다. 과학은 그 숨겨진 진실을 찾는 여정입니다."</p>
+                <ul class="parse-target" style="font-size: 0.85rem; padding-left: 1.2rem; color: var(--negative)">
+                    <li>멀리 떨어진 물체는 서로 상관없다는 생각 (국소 실재론)</li>
+                    <li>모든 일은 원인에 의해 정해져 있다는 생각 (결정론적 세계관)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div id="screen-adventure" class="screen">
+        <div class="game-layout">
+            <div id="opponent-profile">
+                <div id="opp-avatar" style="font-size: 4rem; margin-bottom: 1rem;">👨‍🔬</div>
+                <h3 id="opp-name">상대 과학자</h3>
+                <p id="opp-desc" class="parse-target" style="font-size: 0.875rem; color: var(--text-sub)"></p>
+            </div>
+            <div>
+                <div id="dialog-box">
+                    <p id="question-text"></p>
+                </div>
+                <div id="choice-area"></div>
+                <div id="feedback-box" class="feedback-box"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="screen-result" class="screen" style="text-align: center;">
+        <h2 id="result-title">논쟁 요약</h2>
+        <div id="result-content" style="text-align: left; background: #f1f5f9; padding: 2rem; border-radius: 24px; margin: 2rem 0;"></div>
+        <button onclick="location.reload()" style="background: var(--primary); color: white; padding: 1rem 2.5rem; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; width: 100%; max-width: 280px;">다른 신념으로 도전하기</button>
+    </div>
+</div>
+
+<div id="chatbot-toggle" onclick="toggleChatbot()">🐱</div>
+<div id="chatbot-container">
+    <div id="chatbot-header">
+        <span style="font-weight: 700; font-size: 1.1rem;">🐾 양자냥 AI 도우미</span>
+        <span onclick="toggleChatbot()" style="cursor: pointer; font-size: 1.2rem;">✖</span>
+    </div>
+    <div id="chatbot-messages">
+        <div class="message ai">반갑다냥! 나는 양자역학을 아주 쉽게 설명해주는 '양자냥'이다냥! 🐾<br><br>궁금한 게 있으면 뭐든지 물어보라냥! 내가 아주 똑똑하게 대답해줄 거다냥!</div>
+    </div>
+    <div id="chatbot-input-area">
+        <div id="chatbot-input-group">
+            <input type="text" id="chatbot-input" placeholder="무엇이든 물어보라냥..." onkeypress="if(event.keyCode==13) sendChatMessage()">
+            <button id="chatbot-btn" onclick="sendChatMessage()">야옹</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const termDictionary = {
+        "심연의 논쟁: 현실의 본질": "양자역학의 해석을 두고 세계관 자체를 격렬히 논쟁했던 물리학사 최대의 철학적 분수령을 뜻한다냥!",
+        "심연": "쉽사리 헤아릴 수 없을 정도로 깊은 물리적 원리와 철학적 의문이 공존하는 깊은 경지를 뜻한다냥!",
+        "철학적 충돌": "단순 수식 증명을 넘어 '세상을 관찰한다는 행동의 실체'를 바라보는 과학적 신념의 충돌입다냥!",
+        "철학적 신념": "자연을 완전히 결정된 인과론으로 볼 것인가, 확률적 상태의 중첩으로 볼 것인가에 대한 관점이다냥!",
+        "코펜하겐 해석": "닐스 보어와 하이젠베르크 등이 주도한 해석으로, 미시 세계의 입자는 관측되기 전엔 확률적인 상태로 공존하며 측정에 의해 결정된다는 정통 학설이다냥!",
+        "보완성 원리": "빛의 입자성과 파동성처럼 서로 배타적인 성질들이 결합되어야만 대상의 온전한 물리적 실체를 설명할 수 있다는 원리다냥!",
+        "측정의 본질": "실험 대상과 측정 장치 간의 상호작용이 분리 불가능함을 의미하며, 측정이 대상의 상태를 확정 짓는 핵심 계기가 됨을 뜻한다냥!",
+        "객관적 실재론": "인간의 관측 여부와 전혀 무관하게 외부의 물리적 세계와 성질이 독자적으로 선명히 존재한다는 아인슈타인 측의 고전적 신념이다냥!",
+        "국소 실재론": "어떤 물체의 성질은 독립적으로 정해져 있으며(실재성), 빛보다 빠른 신호가 존재하지 않으므로 멀리 떨어진 공간의 사건은 서로 즉각 영향을 줄 수 없다(국소성)는 이론이다냥!",
+        "결정론적 세계관": "우주의 모든 물리적 사건은 원인과 결과의 법칙에 의해 정확하게 미리 정해진 궤도를 따른다는 전통 역학적 관점이다냥!",
+        "주관적 관념론": "세상이 오직 인간의 의식이나 정신에 의해서만 존재한다는 극단적인 철학적 사상이다냥! (보어는 이에 동의하지 않고 물리적 측정 장치를 강조한다냥!)",
+        "결맞음 해제": "미시 입자가 주변 환경(공기 알갱이, 빛 등) 무수히 많은 거시적 계와 부딪히며 양자역학적인 중첩 성질을 잃어버리고 고전적인 확실성을 띠게 되는 현상이다냥!",
+        "미시 세계": "분자, 원자, 전자 등 아주 작은 크기의 영역으로 고전 뉴턴 역학이 아닌 양자역학적 법칙이 지배하는 세계이다냥!",
+        "중첩": "하나의 입자가 여러 개의 서로 다른 상태를 동시에 가질 수 있다는 상태로, 파동함수의 수학적 결합으로 표현되는 양자역학 고유의 성질이다냥!",
+        "불완전": "양자역학이 확률적인 정답만 맞힐 뿐, 그 뒤에 숨겨진 더 깊은 물리적 결정 요인이나 실제 메커니즘을 온전히 설명하지 못한다는 아인슈타인적 비판이다냥!",
+        "불확정성 원리": "입자의 위치와 운동량을 동시에 임의의 정밀도로 측정하는 것은 물리적 한계로 인해 불가능하다는 하이젠베르크의 원리다냥!",
+        "일반 상대성 이론": "아인슈타인이 발표한 시공간과 중력에 관한 이론으로, 질량을 가진 물체 주변의 시공간이 휘어지며 중력장 안에서는 시간의 흐름이 느려진다는 법칙이다냥!",
+        "양자 얽힘": "아무리 멀리 떨어져 있어도 두 개 이상의 입자가 서로 연결되어, 한 입자의 상태를 측정하면 다른 입자의 상태가 순식간에 결정되는 비국소적 현상이다냥!",
+        "인과적이고 결정론적": "우주의 모든 원인에는 명확히 매칭되는 하나의 결과가 완전히 결정되어 유도된다는 관점이다냥!",
+        "숨은 변수 이론": "양자역학의 확률적 성질은 사실 우리가 아직 발견하지 못한 어떤 '숨겨진 물리적 변수'를 모르기 때문에 나타나는 착시일 뿐이라는 아인슈타인파의 대안 가설이다냥.",
+        "유령 같은 원격 작용": "아인슈타인이 양자 얽힘 현상을 비판하기 위해 사용한 단어로, 빛보다 빠른 속도로 멀리 떨어진 공간에 즉각 영향을 미치는 것처럼 보이는 비정상적 작용을 비꼬아 부른 명칭이다냥!"
+    };
+
+    // 📌 [교정] 팝업 버튼을 단어 전체가 아니라 뒤의 고양이 발바닥 버튼만으로 분리 설정
+    function parseTextToCatPopups(text) {
+        if (!text) return text;
+        const regex = /([^()\s][^()]*?)\s*\(([^()]+)\)/g;
+        return text.replace(regex, (match, easyWord, techTerm) => {
+            const trimmedTerm = techTerm.trim();
+            if (termDictionary[trimmedTerm]) {
+                // 단어는 일반 텍스트로 출력하고, 뒤의 발바닥 아이콘만 버튼으로 감쌉니다.
+                return `${easyWord.trim()}<button class="cat-keyword-btn" onclick="event.stopPropagation(); openCatPopup('${trimmedTerm}')" style="display: inline-flex; min-width: auto; padding: 0 4px; margin-left: 2px;"><span class="cat-icon" style="margin-left: 0;">🐾</span></button>`;
+            }
+            return match;
+        });
+    }
+
+    function initParsing() {
+        document.querySelectorAll('.parse-target').forEach(el => {
+            el.innerHTML = parseTextToCatPopups(el.innerHTML);
+        });
+    }
+
+    function openCatPopup(term) {
+        const desc = termDictionary[term] || "설명이 준비 중인 전문용어다냥!";
+        document.getElementById('cat-popup-title').innerText = `🐾 ${term}`;
+        document.getElementById('cat-popup-desc').innerText = desc;
+        document.getElementById('cat-popup-overlay').style.display = 'flex';
+    }
+
+    function closeCatPopup() {
+        document.getElementById('cat-popup-overlay').style.display = 'none';
+    }
+
+    function closeSearch() {
+        document.getElementById('search-panel').classList.remove('open');
+        document.body.classList.remove('search-open');
+    }
+
+    const scenarios = {
+        bohr: [
+            {
+                opp: "아인슈타인",
+                desc: "우리가 보지 않아도 세상은 그대로 있다고 믿는 거장 (객관적 실재론자)",
+                q: "보어 박사, 자네는 '관찰'이 세상을 만든다고 말하네. 그럼 쥐가 달을 쳐다본다고 해서 달의 상태가 변한다는 말인가? 이것은 과학이 아니라 개인의 생각일 뿐이라는 주장 (주관적 관념론)이 아닌가?",
+                choices: [
+                    {
+                        t: "달처럼 큰 물체는 주변 환경과 계속 부딪히는 현상 (결맞음 해제) 때문에 이미 결정된 것처럼 보일 뿐입니다. 하지만 눈에 보이지 않는 아주 작은 세계 (미시 세계)에서는 관찰 도구와 대상이 서로 뗄 수 없는 관계입니다.",
+                        c: true,
+                        f: "훌륭한 답변입니다. 이것이 바로 보어의 '서로 반대되는 성질이 함께 있어야 한다는 원리 (보완성 원리)'의 핵심입니다. 우리는 대상을 관찰 도구와 분리해서 생각할 수 없다는 점을 정확히 짚었습니다."
+                    },
+                    {
+                        t: "맞습니다. 우리의 마음이 없으면 달도 없습니다. 우주는 인간의 생각에 따라 달라지는 가짜 모습일 뿐입니다.",
+                        c: false,
+                        f: "주의하세요! 보어는 마음이 우주를 만든다고 하지 않았습니다. 그는 '측정 장치'라는 물리적인 부딪힘을 강조했습니다. 과학적인 태도를 잃지 마세요."
+                    }
+                ]
+            },
+            {
+                opp: "슈뢰딩거",
+                desc: "양자역학의 기초를 닦았지만 코펜하겐 해석을 반대한 과학자",
+                q: "상자 속의 고양이가 관찰 전까지 '죽음과 삶이 섞여 있는 것 (중첩)' 상태에 있다는 것은 말이 안 됩니다. 살아있는 동물이 어떻게 두 상태를 동시에 가질 수 있습니까?",
+                choices: [
+                    {
+                        t: "고양이가 죽었는지 살았는지는 이미 상자 안에서 정해져 있습니다. 우리는 그저 모를 뿐입니다.",
+                        c: false,
+                        f: "그것은 슈뢰딩거와 아인슈타인의 생각입니다. 보어의 입장에서는 상자를 열어서 '확인'하기 전까지는 고양이의 상태에 대해 과학적으로 말할 수 없다고 답해야 합니다."
+                    },
+                    {
+                        t: "우리의 말은 큰 세계에 맞춰져 있어 아주 작은 세계의 섞여 있는 상태 (중첩)를 표현하기에 모자랍다. (불완전) 고양이는 '확인'이라는 행동을 통해 비로소 하나의 현실로 확정되는 '현상'의 일부입니다.",
+                        c: true,
+                        f: "보어의 생각을 아주 잘 이해했군요. 그는 양자역학이 자연 그 자체를 그리는 것이 아니라, 자연에 대한 우리의 '지식'을 다루는 것이라고 보았습니다."
+                    }
+                ]
+            },
+            {
+                opp: "아인슈타인 (1930 솔베이)",
+                desc: "위치와 속도를 동시에 알 수 없다는 법칙을 깨뜨리려는 거장",
+                q: "보어 박사, 여기 빛이 들어있는 상자가 있네. 시계 장치로 구멍을 열어 빛 알갱이 하나만 내보내면, 우리는 그 시간과 줄어든 무게를 동시에 정확히 알 수 있지. 위치와 속도를 동시에 알 수 없다는 원리 (불확정성 원리)는 틀렸네!",
+                choices: [
+                    {
+                        t: "아... 그것은 제가 생각하지 못한 부분이군요. 그 원리를 고쳐야겠습니다.",
+                        c: false,
+                        f: "보어는 그날 밤 잠을 자지 못할 정도로 고민했지만, 결국 답을 찾아냈습니다. 포기하지 마세요!"
+                    },
+                    {
+                        t: "박사님, 빛이 나갈 때 상자가 움직이면 박사님의 '중력과 시간의 관계를 설명하는 이론 (일반 상대성 이론)'에 의해 시간도 변합니다! 결국 두 가지를 동시에 정확히 알 수는 없습니다.",
+                        c: true,
+                        f: "완벽한 역전승입니다! 보어는 아인슈타인의 이론을 거꾸로 이용해서 양자역학이 맞다는 것을 증명했습니다. 이것이 역사적인 '보어의 반격'입니다."
+                    }
+                ]
+            },
+            {
+                opp: "아인슈타인 (1935 EPR)",
+                desc: "멀리서도 서로 영향을 준다는 '귀신 같은 현상'을 비판하는 거인",
+                q: "보어 박사, 멀리 떨어진 두 알갱이가 순식간에 정보를 주고받는다는 건가? 이것은 빛보다 빠른 정보 전달이 불가능하다는 생각에 어긋나네. 양자역학은 완벽하지 않은 이론이야!",
+                choices: [
+                    {
+                        t: "두 알갱이는 처음부터 하나로 묶여 있습니다. 아무리 멀리 떨어져도 확인하기 전까지는 나눌 수 없는 전체입니다.",
+                        c: true,
+                        f: "현대 과학의 핵심인 '멀리 떨어져 있어도 하나처럼 연결된 상태 (양자 얽힘)'를 잘 설명했습니다. 보어는 확인이 일어나는 전체적인 상황이 중요하다고 강조했습니다."
+                    },
+                    {
+                        t: "알갱이 속에 빛보다 빠른 신호를 보내는 기계가 들어있을 겁니다.",
+                        c: false,
+                        f: "그것은 과학적인 근거가 없는 상상입니다. 보어는 알갱이 자체가 아니라 '관찰하는 시스템의 전체 모습'을 강조했습니다."
+                    }
+                ]
+            }
+        ],
+        einstein: [
+            {
+                opp: "닐스 보어",
+                desc: "양자 세계의 이상한 점을 그대로 받아들인 과학자",
+                q: "아인슈타인 박사님, 왜 자꾸 자연에 우리가 만든 '정해진 원인과 결과'라는 틀을 강요하십니까? 자연은 원래 확률적이며, 우리는 그것을 받아들여야 합니다.",
+                choices: [
+                    {
+                        t: "확률은 우리가 아직 자연의 모든 이유를 알지 못하기 때문입니다. 자연의 기본 법칙은 반드시 원인과 결과가 확실히 정해진 (인과적이고 결정론적) 것이어야 합니다. '신은 주사위를 던지지 않습니다.'",
+                        c: true,
+                        f: "아인슈타인의 가장 중요한 믿음입니다. 당신은 자연에 명확한 질서가 실제로 존재함을 지켰습니다."
+                    },
+                    {
+                        t: "좋습니다. 보어 박사. 자연이 주사위 놀이를 한다면 저도 이제 확률을 믿어보겠습니다.",
+                        c: false,
+                        f: "아인슈타인은 결코 쉽게 물러서지 않았습니다! 그는 확률이 '모자란 설명'일 뿐이라고 믿었습니다."
+                    }
+                ]
+            },
+            {
+                opp: "하이젠베르크",
+                desc: "우리가 아는 것에는 한계가 있다고 선언한 천재",
+                q: "아인슈타인 박사님, 알갱이의 위치와 움직임을 동시에 정확히 아는 것은 불가능합니다. 이것은 기술의 문제가 아니라 자연의 원래 성질입니다.",
+                choices: [
+                    {
+                        t: "우리가 모른다고 해서 존재하지 않는 것은 아닙니다. 알갱이는 이미 명확한 위치와 속도를 가지고 있지만, 당신의 이론이 그것을 설명하지 못할 뿐입니다. (우리가 아직 모르는 숨겨진 원인이 있다는 이론 (숨은 변수 이론)의 시작)",
+                        c: true,
+                        f: "정확합니다. 이것이 훗날 아인슈타인이 주장한 생각의 기초가 됩니다. 실제로 존재하는 것과 우리가 아는 것을 구분하는 당신의 논리는 날카로웠습니다."
+                    },
+                    {
+                        t: "위치와 속도를 모른다면 과학은 더 이상 필요 없습니다. 당신의 생각을 금지해야 합니다.",
+                        c: false,
+                        f: "아인슈타인은 상대의 생각을 금지하려 한 것이 아니라, 그것이 자연을 '완벽하게 설명하지 못함'을 증명하려고 계속 노력했습니다."
+                    }
+                ]
+            },
+            {
+                opp: "닐스 보어 (1930 솔베이)",
+                desc: "양자역학의 법칙을 지키려는 코펜하겐의 수장",
+                q: "아인슈타인 박사님, 박사님이 제안하신 '빛 상자' 실험은 정말 멋집니다. 하지만 무게를 잴 때 상자가 흔들리는 것은 어떻게 생각하십니까?",
+                choices: [
+                    {
+                        t: "흔들림은 아주 조심해서 재면 됩니다. 중요한 것은 시계가 빛이 나가는 정확한 시간을 기록한다는 것이죠.",
+                        c: true,
+                        f: "아인슈타인은 시계와 무게 재기를 통해 양자역학의 법칙을 무너뜨릴 수 있다고 확신했습니다. 당신은 이 정교한 함정을 설계했습니다."
+                    },
+                    {
+                        t: "상자가 흔들리면 정확히 알 수 없겠군요. 제 실험이 틀린 것 같습니다.",
+                        c: false,
+                        f: "아인슈타인은 이 실험에 아주 큰 자신감을 보였습니다. 그는 보어의 허점을 찔렀다고 생각했죠."
+                    }
+                ]
+            },
+            {
+                opp: "양자 정보 과학자 (현대)",
+                desc: "아인슈타인의 비판을 새로운 과학으로 발전시킨 현대 과학자",
+                q: "아인슈타인 박사님, 박사님이 양자역학의 실수라고 지적하셨던 '멀리서도 귀신처럼 서로 연결된 현상 (유령 같은 원격 작용)'이 실험으로 증명되었습니다! 이제 양자역학이 완전하다는 것을 인정하시나요?",
+                choices: [
+                    {
+                        t: "실험 결과가 그렇다면 제가 틀렸군요. 양자역학은 완벽한 이론입니다.",
+                        c: false,
+                        f: "아인슈타인은 단순히 실험 결과에 항복하는 사람이 아니었습니다. 그는 여전히 '왜' 그런 일이 일어나는지에 대한 더 깊은 원리가 필요하다고 생각했을 것입니다."
+                    },
+                    {
+                        t: "실험이 성공했을지라도, 그것은 여전히 세상의 원래 성질이 무너진 이상한 상태일 뿐입니다. 우리는 여전히 자연의 더 깊은 진실을 설명할 완벽한 이론을 찾아야 합니다.",
+                        c: true,
+                        f: "아인슈타인의 끈기 있는 태도를 잘 표현했습니다. 그는 양자역학의 예측이 맞더라도, 그것이 자연을 설명하는 '최종적인 방법'은 아닐 것이라고 믿었습니다."
+                    }
+                ]
+            }
+        ]
+    };
+
+    let currentSession = {
+        name: "과학 대원",
+        char: null,
+        round: 0,
+        score: 0,
+        history: [],
+        chatHistory: []
+    };
+
+    window.onload = () => {
+        initParsing();
+        addMessage("🐾 안냥! 나는 네 게임을 지켜보는 양자냥이다냥! 궁금한 게 있으면 언제든 물어보라냥!", "system");
+    };
+
+    function showScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+
+    function checkNameAndNext() {
+        const nameInput = document.getElementById('user-name').value.trim();
+        if (nameInput === "") {
+            alert("회의장에 입장하기 위해 이름을 입력해주세요!");
+            return;
+        }
+        currentSession.name = nameInput;
+        document.getElementById('welcome-name').innerText = nameInput;
+        showScreen('screen-select');
+    }
+
+    function startAdventure(char) {
+        currentSession.char = char;
+        currentSession.round = 0;
+        currentSession.score = 0;
+        currentSession.history = [];
+        addMessage(`🐾 오호, ${char === 'bohr' ? '보어' : '아인슈타인'}를 선택했냥? 탁월한 선택이다냥! 같이 토론을 이겨보자냥!`, "ai");
+        showScreen('screen-adventure');
+        loadRound();
+    }
+
+    function loadRound() {
+        const data = scenarios[currentSession.char][currentSession.round];
+        document.getElementById('opp-name').innerText = data.opp;
+        document.getElementById('opp-desc').innerHTML = parseTextToCatPopups(data.desc);
+        
+        let questionText = data.q;
+        if (currentSession.char === 'bohr') {
+            questionText = questionText.replace("보어 박사", currentSession.name + " 박사");
+        } else {
+            questionText = questionText.replace("아인슈타인 박사", currentSession.name + " 박사");
+        }
+        
+        document.getElementById('question-text').innerHTML = parseTextToCatPopups(questionText);
+        document.getElementById('progress-bar').style.width = `${(currentSession.round / scenarios[currentSession.char].length) * 100}%`;
+
+        const choiceArea = document.getElementById('choice-area');
+        choiceArea.innerHTML = '';
+        document.getElementById('feedback-box').style.display = 'none';
+        data.choices.forEach(choice => {
+            const btn = document.createElement('button');
+            btn.className = 'choice-btn';
+            btn.innerHTML = parseTextToCatPopups(choice.t);
+            btn.onclick = () => selectChoice(choice, data);
+            choiceArea.appendChild(btn);
+        });
+    }
+
+    function selectChoice(choice, roundData) {
+        const feedback = document.getElementById('feedback-box');
+        feedback.style.display = 'block';
+        feedback.innerHTML = parseTextToCatPopups(choice.f);
+        feedback.className = `feedback-box ${choice.c ? 'correct' : 'incorrect'}`;
+        
+        const correctChoice = roundData.choices.find(c => c.c);
+        currentSession.history.push({
+            opp: roundData.opp,
+            q: roundData.q,
+            selected: choice.t,
+            isCorrect: choice.c,
+            correctAnswer: correctChoice.t,
+            explanation: correctChoice.f
+        });
+        if (choice.c) {
+            currentSession.score++;
+        }
+        
+        document.querySelectorAll('.choice-btn').forEach(b => b.onclick = null);
+        setTimeout(() => {
+            currentSession.round++;
+            if (currentSession.round < scenarios[currentSession.char].length) {
+                loadRound();
+            } else {
+                showResult();
+            }
+        }, 4000);
+    }
+
+    function showResult() {
+        showScreen('screen-result');
+        const content = document.getElementById('result-content');
+        const title = document.getElementById('result-title');
+        const charName = currentSession.char === 'bohr' ? "닐스 보어" : "아인슈타인";
+        title.innerText = `${currentSession.name} 님의 논쟁 보고서`;
+        
+        let html = `<h3 style="color: var(--primary); border-bottom: 2px solid var(--accent); padding-bottom: 0.5rem;">📜 ${charName}의 길을 걸어본 소감</h3>`;
+        html += `<p>당신은 ${scenarios[currentSession.char].length}번의 생각의 공방에서 ${currentSession.score}번 자신의 믿음을 멋지게 표현했습니다.</p>`;
+        if (currentSession.char === 'bohr') {
+            html += `<p>${currentSession.name} 님에게 과학은 <strong>'자연에 대해 우리가 무엇을 말할 수 있는가'</strong>를 찾아가는 과정이었습니다. 당신은 관찰하는 행동이 세상을 결정한다는 놀라운 생각을 지켰습니다.</p>`;
+        } else {
+            html += `<p>${currentSession.name} 님에게 과학은 <strong>'우리가 보든 안 보든 존재하는 우주의 질서'</strong>를 찾는 것이었습니다. 당신은 양자역학이 정답을 잘 맞히더라도, 그것이 세상의 전부는 아닐 것이라는 믿음을 지켰습니다.</p>`;
+        }
+        
+        html += `<h3 style="margin-top: 3rem; color: var(--primary); border-bottom: 2px solid var(--accent); padding-bottom: 0.5rem;">📊 토론 내용 다시 보기</h3>`;
+        currentSession.history.forEach((item, index) => {
+            html += `
+                <div style="margin: 1.5rem 0; padding: 1.5rem; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; border-left: 8px solid ${item.isCorrect ? '#10b981' : '#ef4444'}">
+                    <p style="margin-top: 0;"><strong>라운드 ${index + 1}: ${item.opp}의 질문</strong></p>
+                    <p style="font-size: 1rem; color: var(--text-sub); font-style: italic;">"${parseTextToCatPopups(item.q)}"</p>
+                    <div style="margin-top: 1rem; padding: 1rem; background: ${item.isCorrect ? '#f0fdf4' : '#fef2f2'}; border-radius: 12px;">
+                        <p style="margin: 0; color: ${item.isCorrect ? '#065f46' : '#991b1b'}">
+                            <strong>내가 선택한 답변:</strong> ${parseTextToCatPopups(item.selected)} ${item.isCorrect ? '✅' : '❌'}
+                        </p>
+                        ${!item.isCorrect ? `<p style="margin: 0.5rem 0 0 0; color: #065f46;"><strong>올바른 답변:</strong> ${parseTextToCatPopups(item.correctAnswer)}</p>` : ''}
+                    </div>
+                    <p style="margin-top: 1rem; font-size: 0.95rem; color: var(--text-main);">
+                        <strong>📝 핵심 설명:</strong> ${parseTextToCatPopups(item.explanation)}
+                    </p>
+                </div>
+            `;
+        });
+        
+        content.innerHTML = html;
+        document.getElementById('progress-bar').style.width = `100%`;
+        addMessage("🐾 오오! 보고서가 나왔다냥! 궁금한 점이 있으면 내가 설명해주겠다냥!", "ai");
+    }
+
+    function toggleChatbot() {
+        document.getElementById('chatbot-container').classList.toggle('open');
+    }
+
+    async function sendChatMessage() {
+        const input = document.getElementById('chatbot-input');
+        const text = input.value.trim();
+        if (!text) return;
+
+        addMessage(text, 'user');
+        input.value = '';
+
+        const searchPanel = document.getElementById('search-panel');
+        const searchFrame = document.getElementById('search-frame');
+        
+        const searchUrl = `https://www.bing.com/search?q=${encodeURIComponent(text)}`;
+        searchFrame.src = searchUrl;
+        searchPanel.classList.add('open');
+        document.body.classList.add('search-open');
+
+        addMessage(`🐾 집사야! 내가 '${text}'(으)로 검색을 해봤다냥! 왼쪽 화면을 확인해보라냥! 🐾<br><br><small>화면이 나오지 않는다면 <a href="${searchUrl}" target="_blank" style="color: var(--cat-dark); text-decoration: underline;">여기</a>를 눌러보라냥!</small>`, "ai");
+    }
+
+    function addMessage(text, sender) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `message ${sender}`;
+        msgDiv.innerHTML = text.replace(/\n/g, '<br>');
+        const container = document.getElementById('chatbot-messages');
+        container.appendChild(msgDiv);
+        container.scrollTop = container.scrollHeight;
+    }
+</script>
+
+</body>
+</html>
